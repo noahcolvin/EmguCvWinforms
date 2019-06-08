@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using DirectShowLib;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Emgu.CV.UI;
 using Emgu.CV.Util;
 
 namespace EmguCvWinforms
@@ -22,6 +18,8 @@ namespace EmguCvWinforms
         {
             InitializeComponent();
 
+            DetectionMethod.SelectedIndex = 0;
+
             var systemCameras = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
             var capture = new VideoCapture(systemCameras.Length - 1);
 
@@ -30,11 +28,22 @@ namespace EmguCvWinforms
                 OriginalImage.Image = capture.QueryFrame();
                 RunIfNotRunning(() =>
                 {
-                    var (form, contours) = FindForm2(capture.QueryFrame());
+                    var (form, contours) = FindFormUsingSelectedMethod(capture.QueryFrame());
                     FormImage.Image = form;
                     ContourImage.Image = contours;
                 });
             };
+        }
+
+        (IImage, IImage) FindFormUsingSelectedMethod(IImage image)
+        {
+            switch (DetectionMethod.SelectedIndex)
+            {
+                case 1:
+                    return FindForm2(image);
+                default:
+                    return FindForm(image);
+            }
         }
 
         void RunIfNotRunning(Action a)
@@ -49,7 +58,6 @@ namespace EmguCvWinforms
         (IImage, IImage) FindForm(IImage image)
         {
             var originalImage = image.Clone() as IImage;
-            //var image = new Mat();
             CvInvoke.CvtColor(image, image, ColorConversion.Bgr2Rgb);
 
             Write(image, 1);
@@ -97,7 +105,7 @@ namespace EmguCvWinforms
                 var approxSize = approx.Size;
 
                 if (approxSize == 4 && isContourConvex)
-                    CvInvoke.DrawContours(imageWithContours, new VectorOfVectorOfPoint(approx), -1, new Bgr(Color.SpringGreen).MCvScalar);
+                    CvInvoke.DrawContours(imageWithContours, new VectorOfVectorOfPoint(approx), -1, new Bgr(Color.SpringGreen).MCvScalar, 2);
 
                 if (approxSize == 4
                     && isContourConvex
@@ -183,12 +191,14 @@ namespace EmguCvWinforms
             var triangleRectangleImage = new Image<Bgr, byte>(image.Bitmap);
             foreach (var box in boxList)
                 triangleRectangleImage.Draw(box, new Bgr(Color.DarkOrange), 2);
-            
+
             if (boxList.Any())
             {
                 var biggestBox = boxList.OrderBy(c => c.Size.Height * c.Size.Width).Last();
+                if (biggestBox.Size.Width * biggestBox.Size.Height < image.Size.Width * image.Size.Height / 3.0)
+                    return (image, triangleRectangleImage);
 
-                var destRectangle = new[] {new PointF(0, 0), new PointF(0, image.Size.Height), new PointF(image.Size.Width, image.Size.Height), new PointF(image.Size.Width, 0)};
+                var destRectangle = new[] { new PointF(0, 0), new PointF(0, image.Size.Height), new PointF(image.Size.Width, image.Size.Height), new PointF(image.Size.Width, 0) };
                 var sourceRectangle = new[]
                 {
                     new PointF(biggestBox.GetVertices()[0].X, biggestBox.GetVertices()[0].Y), new PointF(biggestBox.GetVertices()[1].X, biggestBox.GetVertices()[1].Y),
@@ -201,7 +211,77 @@ namespace EmguCvWinforms
                 return (outputImage, triangleRectangleImage);
             }
 
-            return (triangleRectangleImage, triangleRectangleImage);
+            return (image, triangleRectangleImage);
+        }
+
+        (IImage, IImage) FindForm3(IImage image)
+        {
+            var i = new Image<Bgr, byte>(image.Bitmap);
+            var ratio = image.Size.Height / 500.0;
+            var orig = image.Clone() as IImage;
+            image = i.Resize(0, 500, Inter.Cubic, true);
+
+            var gray = new Mat();
+            CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
+            CvInvoke.GaussianBlur(gray, gray, new Size(5, 5), 0);
+
+            var edged = new Mat();
+            CvInvoke.Canny(gray, edged, 75, 200);
+
+            var contours = new VectorOfVectorOfPoint();
+            var hierarchy = new Mat();
+            CvInvoke.FindContours(edged.Clone(), contours, hierarchy, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+            contours = SortedContours(contours);
+
+            var screenCnt = new VectorOfPoint();
+
+            for (var j = 0; j < contours.Size; j++)
+            {
+                var c = contours[j];
+                var peri = CvInvoke.ArcLength(c, true);
+                var approx = new VectorOfPoint();
+                CvInvoke.ApproxPolyDP(c, approx, 0.02 * peri, true);
+
+                if (approx.Size == 4)
+                {
+                    screenCnt = approx;
+                    break;
+                }
+            }
+
+
+
+            return (null, null);
+        }
+
+        VectorOfVectorOfPoint SortedContours(VectorOfVectorOfPoint contours)
+        {
+            var dict = new Dictionary<double, VectorOfPoint>();
+
+            var count = contours.Size;
+            for (var i = 0; i < count; i++)
+            {
+                using (var contour = contours[i])
+                using (var approxContour = new VectorOfPoint())
+                {
+                    dict.Add(CvInvoke.ContourArea(contour), contour);
+                }
+            }
+
+            var orderedDict = dict.OrderByDescending(c => c.Key);
+            var sorted = new VectorOfVectorOfPoint();
+            orderedDict.ToList().ForEach(x => sorted.Push(x.Value));
+            return sorted;
+        }
+
+        VectorOfPoint GrabContours(VectorOfVectorOfPoint contours)
+        {
+            if (contours.Size == 2)
+                return contours[0];
+            if (contours.Size == 3)
+                return contours[1];
+
+            return null;
         }
 
         void Write(IImage image, int number)

@@ -33,6 +33,7 @@
             this.FormImage = new Emgu.CV.UI.ImageBox();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.ContourImage = new Emgu.CV.UI.ImageBox();
+            this.DetectionMethod = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.OriginalImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.FormImage)).BeginInit();
             this.flowLayoutPanel1.SuspendLayout();
@@ -59,13 +60,15 @@
             // 
             // flowLayoutPanel1
             // 
+            this.flowLayoutPanel1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.flowLayoutPanel1.Controls.Add(this.OriginalImage);
             this.flowLayoutPanel1.Controls.Add(this.FormImage);
             this.flowLayoutPanel1.Controls.Add(this.ContourImage);
-            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 40);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(671, 1028);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(647, 976);
             this.flowLayoutPanel1.TabIndex = 3;
             // 
             // ContourImage
@@ -77,11 +80,24 @@
             this.ContourImage.TabIndex = 2;
             this.ContourImage.TabStop = false;
             // 
+            // DetectionMethod
+            // 
+            this.DetectionMethod.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.DetectionMethod.FormattingEnabled = true;
+            this.DetectionMethod.Items.AddRange(new object[] {
+            "Method 1",
+            "Method 2"});
+            this.DetectionMethod.Location = new System.Drawing.Point(13, 13);
+            this.DetectionMethod.Name = "DetectionMethod";
+            this.DetectionMethod.Size = new System.Drawing.Size(121, 21);
+            this.DetectionMethod.TabIndex = 4;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(671, 1028);
+            this.Controls.Add(this.DetectionMethod);
             this.Controls.Add(this.flowLayoutPanel1);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -99,6 +115,7 @@
         private Emgu.CV.UI.ImageBox FormImage;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private Emgu.CV.UI.ImageBox ContourImage;
+        private System.Windows.Forms.ComboBox DetectionMethod;
     }
 }
 
