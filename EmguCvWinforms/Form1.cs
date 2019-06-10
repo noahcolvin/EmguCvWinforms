@@ -8,31 +8,64 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using Orientation = System.Windows.Forms.Orientation;
 
 namespace EmguCvWinforms
 {
     public partial class Form1 : Form
     {
-        private static bool _running = false;
+        private static bool _running;
+        private VideoCapture _capture;
+
         public Form1()
         {
             InitializeComponent();
 
             DetectionMethod.SelectedIndex = 0;
+            Resolution.SelectedIndex = 0;
+            Resolution.SelectedIndexChanged += (sender, args) =>
+            {
+                if (Resolution.SelectedIndex == 0)
+                {
+                    _capture.SetCaptureProperty(CapProp.FrameWidth, 640);
+                    _capture.SetCaptureProperty(CapProp.FrameHeight, 480);
+                }
+                else if (Resolution.SelectedIndex == 1)
+                {
+                    _capture.SetCaptureProperty(CapProp.FrameWidth, 1280);
+                    _capture.SetCaptureProperty(CapProp.FrameHeight, 720);
+                }
+                else if (Resolution.SelectedIndex == 2)
+                {
+                    _capture.SetCaptureProperty(CapProp.FrameWidth, 1920);
+                    _capture.SetCaptureProperty(CapProp.FrameHeight, 1080);
+                }
+            };
+            splitContainer1.SplitterDistance = (splitContainer1.Width - 2) / 2;
+            ReorientSplitter();
+            ResizeEnd += (sender, args) => ReorientSplitter();
 
             var systemCameras = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
-            var capture = new VideoCapture(systemCameras.Length - 1);
+            _capture = new VideoCapture(captureApi: VideoCapture.API.DShow);
+
+            Cameras.DataSource = systemCameras;
+            Cameras.DisplayMember = nameof(DsDevice.Name);
+            Cameras.SelectedIndexChanged += (sender, args) => { _capture = new VideoCapture(Cameras.SelectedIndex, VideoCapture.API.DShow); };
 
             Application.Idle += (sender, args) =>
             {
-                OriginalImage.Image = capture.QueryFrame();
                 RunIfNotRunning(() =>
                 {
-                    var (form, contours) = FindFormUsingSelectedMethod(capture.QueryFrame());
+                    var (form, contours) = FindFormUsingSelectedMethod(_capture.QueryFrame());
                     FormImage.Image = form;
                     ContourImage.Image = contours;
                 });
             };
+        }
+
+        void ReorientSplitter()
+        {
+            splitContainer1.Orientation = Width > Height ? Orientation.Vertical : Orientation.Horizontal;
         }
 
         (IImage, IImage) FindFormUsingSelectedMethod(IImage image)
@@ -78,7 +111,7 @@ namespace EmguCvWinforms
 
             var height = edges.Height;
             var width = edges.Width;
-            var maxContourArea = (width - 10) * (height - 10);
+            var maxContourArea = (width - 50) * (height - 50);
             var maxAreaFound = maxContourArea * 0.3;
 
             var imageWithContours = originalImage.Clone() as IImage;
