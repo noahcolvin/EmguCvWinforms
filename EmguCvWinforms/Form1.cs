@@ -92,8 +92,9 @@ namespace EmguCvWinforms
         {
             var originalImage = image.Clone() as IImage;
 
-            using (var smallerImage = new Image<Bgr, byte>(image.Bitmap).Resize(0.25, Inter.Cubic))
+            using (var smallerImage = new Image<Bgr, byte>(image.Bitmap).Resize(1, Inter.Cubic))
             {
+                image.Dispose();
                 CvInvoke.CvtColor(smallerImage, smallerImage, ColorConversion.Bgr2Rgb);
                 CvInvoke.CvtColor(smallerImage, smallerImage, ColorConversion.Bgr2Gray);
 
@@ -116,7 +117,7 @@ namespace EmguCvWinforms
                         var width = edges.Width;
 
                         var maxContourArea = (width - 50) * (height - 50);
-                        var maxAreaFound = maxContourArea * 0.3;
+                        var maxAreaFound = maxContourArea * 0.25;
 
                         var imageWithContours = originalImage.Clone() as IImage;
                         var pageContour = new VectorOfPoint();
@@ -134,7 +135,7 @@ namespace EmguCvWinforms
                             var approxSize = approx.Size;
 
                             if (approxSize == 4 && isContourConvex)
-                                CvInvoke.DrawContours(imageWithContours, new VectorOfVectorOfPoint(SortContourAndScale(approx, 4)), -1, new Bgr(Color.SpringGreen).MCvScalar, 2);
+                                CvInvoke.DrawContours(imageWithContours, new VectorOfVectorOfPoint(SortContourAndScale(approx, 1)), -1, new Bgr(Color.SpringGreen).MCvScalar, 2);
 
                             if (approxSize == 4
                                 && isContourConvex
@@ -148,7 +149,7 @@ namespace EmguCvWinforms
 
                         if (pageContour.Size != 4) return (originalImage, imageWithContours);
 
-                        pageContour = SortContourAndScale(pageContour, 4);
+                        pageContour = SortContourAndScale(pageContour, 1);
 
                         width = Math.Max(pageContour[1].X - pageContour[0].X, pageContour[2].X - pageContour[3].X);
                         height = Math.Max(pageContour[3].Y - pageContour[0].Y, pageContour[2].Y - pageContour[1].Y);
