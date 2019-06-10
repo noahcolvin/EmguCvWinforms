@@ -42,18 +42,20 @@
             // 
             // OriginalImage
             // 
-            this.OriginalImage.Location = new System.Drawing.Point(3, 3);
+            this.OriginalImage.Location = new System.Drawing.Point(4, 4);
+            this.OriginalImage.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.OriginalImage.Name = "OriginalImage";
-            this.OriginalImage.Size = new System.Drawing.Size(400, 300);
+            this.OriginalImage.Size = new System.Drawing.Size(533, 369);
             this.OriginalImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.OriginalImage.TabIndex = 2;
             this.OriginalImage.TabStop = false;
             // 
             // FormImage
             // 
-            this.FormImage.Location = new System.Drawing.Point(3, 309);
+            this.FormImage.Location = new System.Drawing.Point(4, 381);
+            this.FormImage.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.FormImage.Name = "FormImage";
-            this.FormImage.Size = new System.Drawing.Size(400, 300);
+            this.FormImage.Size = new System.Drawing.Size(533, 369);
             this.FormImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.FormImage.TabIndex = 2;
             this.FormImage.TabStop = false;
@@ -66,16 +68,18 @@
             this.flowLayoutPanel1.Controls.Add(this.OriginalImage);
             this.flowLayoutPanel1.Controls.Add(this.FormImage);
             this.flowLayoutPanel1.Controls.Add(this.ContourImage);
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(12, 40);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(16, 49);
+            this.flowLayoutPanel1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(647, 976);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(863, 1201);
             this.flowLayoutPanel1.TabIndex = 3;
             // 
             // ContourImage
             // 
-            this.ContourImage.Location = new System.Drawing.Point(3, 615);
+            this.ContourImage.Location = new System.Drawing.Point(4, 758);
+            this.ContourImage.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.ContourImage.Name = "ContourImage";
-            this.ContourImage.Size = new System.Drawing.Size(400, 300);
+            this.ContourImage.Size = new System.Drawing.Size(533, 369);
             this.ContourImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.ContourImage.TabIndex = 2;
             this.ContourImage.TabStop = false;
@@ -86,19 +90,23 @@
             this.DetectionMethod.FormattingEnabled = true;
             this.DetectionMethod.Items.AddRange(new object[] {
             "Method 1",
-            "Method 2"});
-            this.DetectionMethod.Location = new System.Drawing.Point(13, 13);
+            "Method 2",
+            "Method 3",
+            "Method 4"});
+            this.DetectionMethod.Location = new System.Drawing.Point(17, 16);
+            this.DetectionMethod.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.DetectionMethod.Name = "DetectionMethod";
-            this.DetectionMethod.Size = new System.Drawing.Size(121, 21);
+            this.DetectionMethod.Size = new System.Drawing.Size(160, 24);
             this.DetectionMethod.TabIndex = 4;
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(671, 1028);
+            this.ClientSize = new System.Drawing.Size(895, 1265);
             this.Controls.Add(this.DetectionMethod);
             this.Controls.Add(this.flowLayoutPanel1);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "Form1";
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.OriginalImage)).EndInit();
