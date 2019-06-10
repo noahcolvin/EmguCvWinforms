@@ -111,11 +111,13 @@ namespace EmguCvWinforms
 
             if (pageContour.Size != 4) return (originalImage, imageWithContours);
 
-            width = Math.Max(pageContour[0].X - pageContour[1].X, pageContour[3].X - pageContour[2].X);
-            height = Math.Max(pageContour[2].Y - pageContour[1].Y, pageContour[3].Y - pageContour[0].Y);
+            pageContour = SortContour(pageContour);
 
-            // top right, top left, bottom left, bottom right
-            var destRectangle = new[] { new PointF(width, 0), new PointF(0, 0), new PointF(0, height), new PointF(width, height), };
+            width = Math.Max(pageContour[1].X - pageContour[0].X, pageContour[2].X - pageContour[3].X);
+            height = Math.Max(pageContour[3].Y - pageContour[0].Y, pageContour[2].Y - pageContour[1].Y);
+
+            // top left, top right, bottom right, bottom left
+            var destRectangle = new[] { new PointF(0, 0), new PointF(width, 0), new PointF(width, height), new PointF(0, height), };
             var sourceRectangle = new[] { new PointF(pageContour[0].X, pageContour[0].Y), new PointF(pageContour[1].X, pageContour[1].Y), new PointF(pageContour[2].X, pageContour[2].Y), new PointF(pageContour[3].X, pageContour[3].Y) };
 
             var transform = CvInvoke.GetPerspectiveTransform(sourceRectangle, destRectangle);
@@ -123,6 +125,22 @@ namespace EmguCvWinforms
             CvInvoke.WarpPerspective(originalImage, outputImage, transform, new Size(width, height));
 
             return (outputImage, imageWithContours);
+        }
+
+        VectorOfPoint SortContour(VectorOfPoint contour)
+        {
+            // Sort corners to be top left, top right, bottom right, bottom left
+            var cArray = contour.ToArray();
+
+            var leftSide = cArray.OrderBy(c => c.X).Take(2).OrderBy(c => c.Y).ToList();
+            var rightSide = cArray.OrderByDescending(c => c.X).Take(2).OrderBy(c => c.Y).ToList();
+
+            var topLeft = leftSide.First();
+            var topRight = rightSide.First();
+            var bottomRight = rightSide.Last();
+            var bottomLeft = leftSide.Last();
+
+            return new VectorOfPoint(new[] { topLeft, topRight, bottomRight, bottomLeft });
         }
 
         (IImage, IImage) FindForm2(IImage image)
