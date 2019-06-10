@@ -91,76 +91,86 @@ namespace EmguCvWinforms
         (IImage, IImage) FindForm(IImage image)
         {
             var originalImage = image.Clone() as IImage;
-            CvInvoke.CvtColor(image, image, ColorConversion.Bgr2Rgb);
-            CvInvoke.CvtColor(image, image, ColorConversion.Bgr2Gray);
 
-            var copy = new Mat();
-            CvInvoke.BilateralFilter(image, copy, 9, 75, 75);
-            image = copy;
-
-            CvInvoke.AdaptiveThreshold(image, image, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 115, 4);
-            CvInvoke.MedianBlur(image, image, 11);
-            CvInvoke.CopyMakeBorder(image, image, 5, 5, 5, 5, BorderType.Constant, new MCvScalar(0, 0, 0));
-
-            var edges = new Mat();
-            CvInvoke.Canny(image, edges, 200, 250);
-
-            var contours = new VectorOfVectorOfPoint();
-            var hierarchy = new Mat();
-            CvInvoke.FindContours(edges, contours, hierarchy, RetrType.Tree, ChainApproxMethod.ChainApproxSimple);
-
-            var height = edges.Height;
-            var width = edges.Width;
-            var maxContourArea = (width - 50) * (height - 50);
-            var maxAreaFound = maxContourArea * 0.3;
-
-            var imageWithContours = originalImage.Clone() as IImage;
-            var pageContour = new VectorOfPoint();
-
-            for (var x = 0; x < contours.Size; x++)
+            using (var smallerImage = new Image<Bgr, byte>(image.Bitmap).Resize(0.25, Inter.Cubic))
             {
-                var contour = contours[x];
+                CvInvoke.CvtColor(smallerImage, smallerImage, ColorConversion.Bgr2Rgb);
+                CvInvoke.CvtColor(smallerImage, smallerImage, ColorConversion.Bgr2Gray);
 
-                var perimeter = CvInvoke.ArcLength(contour, true);
-                var approx = new VectorOfPoint();
-                CvInvoke.ApproxPolyDP(contour, approx, 0.03 * perimeter, true);
-
-                var isContourConvex = CvInvoke.IsContourConvex(approx);
-                var contourArea = CvInvoke.ContourArea(approx);
-                var approxSize = approx.Size;
-
-                if (approxSize == 4 && isContourConvex)
-                    CvInvoke.DrawContours(imageWithContours, new VectorOfVectorOfPoint(approx), -1, new Bgr(Color.SpringGreen).MCvScalar, 2);
-
-                if (approxSize == 4
-                    && isContourConvex
-                    && maxAreaFound < contourArea
-                    && contourArea < maxContourArea)
+                using (var filtered = new Mat())
                 {
-                    maxAreaFound = contourArea;
-                    pageContour = approx;
+                    CvInvoke.BilateralFilter(smallerImage, filtered, 9, 75, 75);
+
+                    CvInvoke.AdaptiveThreshold(filtered, filtered, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 115, 4);
+                    CvInvoke.MedianBlur(filtered, filtered, 11);
+                    CvInvoke.CopyMakeBorder(filtered, filtered, 5, 5, 5, 5, BorderType.Constant, new MCvScalar(0, 0, 0));
+
+                    using (var edges = new Mat())
+                    {
+                        CvInvoke.Canny(filtered, edges, 200, 250);
+                        var contours = new VectorOfVectorOfPoint();
+                        var hierarchy = new Mat();
+                        CvInvoke.FindContours(edges, contours, hierarchy, RetrType.Tree, ChainApproxMethod.ChainApproxSimple);
+
+                        var height = edges.Height;
+                        var width = edges.Width;
+
+                        var maxContourArea = (width - 50) * (height - 50);
+                        var maxAreaFound = maxContourArea * 0.3;
+
+                        var imageWithContours = originalImage.Clone() as IImage;
+                        var pageContour = new VectorOfPoint();
+
+                        for (var x = 0; x < contours.Size; x++)
+                        {
+                            var contour = contours[x];
+
+                            var perimeter = CvInvoke.ArcLength(contour, true);
+                            var approx = new VectorOfPoint();
+                            CvInvoke.ApproxPolyDP(contour, approx, 0.03 * perimeter, true);
+
+                            var isContourConvex = CvInvoke.IsContourConvex(approx);
+                            var contourArea = CvInvoke.ContourArea(approx);
+                            var approxSize = approx.Size;
+
+                            if (approxSize == 4 && isContourConvex)
+                                CvInvoke.DrawContours(imageWithContours, new VectorOfVectorOfPoint(SortContourAndScale(approx, 4)), -1, new Bgr(Color.SpringGreen).MCvScalar, 2);
+
+                            if (approxSize == 4
+                                && isContourConvex
+                                && maxAreaFound < contourArea
+                                && contourArea < maxContourArea)
+                            {
+                                maxAreaFound = contourArea;
+                                pageContour = approx;
+                            }
+                        }
+
+                        if (pageContour.Size != 4) return (originalImage, imageWithContours);
+
+                        pageContour = SortContourAndScale(pageContour, 4);
+
+                        width = Math.Max(pageContour[1].X - pageContour[0].X, pageContour[2].X - pageContour[3].X);
+                        height = Math.Max(pageContour[3].Y - pageContour[0].Y, pageContour[2].Y - pageContour[1].Y);
+
+                        // top left, top right, bottom right, bottom left
+                        var destRectangle = new[] { new PointF(0, 0), new PointF(width, 0), new PointF(width, height), new PointF(0, height), };
+                        var sourceRectangle = new[] { new PointF(pageContour[0].X, pageContour[0].Y), new PointF(pageContour[1].X, pageContour[1].Y), new PointF(pageContour[2].X, pageContour[2].Y), new PointF(pageContour[3].X, pageContour[3].Y) };
+
+                        using (var transform = CvInvoke.GetPerspectiveTransform(sourceRectangle, destRectangle))
+                        {
+                            var outputImage = new Mat();
+                            CvInvoke.WarpPerspective(originalImage, outputImage, transform, new Size(width, height));
+                            originalImage.Dispose();
+
+                            return (outputImage, imageWithContours);
+                        }
+                    }
                 }
             }
-
-            if (pageContour.Size != 4) return (originalImage, imageWithContours);
-
-            pageContour = SortContour(pageContour);
-
-            width = Math.Max(pageContour[1].X - pageContour[0].X, pageContour[2].X - pageContour[3].X);
-            height = Math.Max(pageContour[3].Y - pageContour[0].Y, pageContour[2].Y - pageContour[1].Y);
-
-            // top left, top right, bottom right, bottom left
-            var destRectangle = new[] { new PointF(0, 0), new PointF(width, 0), new PointF(width, height), new PointF(0, height), };
-            var sourceRectangle = new[] { new PointF(pageContour[0].X, pageContour[0].Y), new PointF(pageContour[1].X, pageContour[1].Y), new PointF(pageContour[2].X, pageContour[2].Y), new PointF(pageContour[3].X, pageContour[3].Y) };
-
-            var transform = CvInvoke.GetPerspectiveTransform(sourceRectangle, destRectangle);
-            var outputImage = new Mat();
-            CvInvoke.WarpPerspective(originalImage, outputImage, transform, new Size(width, height));
-
-            return (outputImage, imageWithContours);
         }
 
-        VectorOfPoint SortContour(VectorOfPoint contour)
+        VectorOfPoint SortContourAndScale(VectorOfPoint contour, int scaleTo)
         {
             // Sort corners to be top left, top right, bottom right, bottom left
             var cArray = contour.ToArray();
@@ -173,7 +183,11 @@ namespace EmguCvWinforms
             var bottomRight = rightSide.Last();
             var bottomLeft = leftSide.Last();
 
-            return new VectorOfPoint(new[] { topLeft, topRight, bottomRight, bottomLeft });
+            return new VectorOfPoint(new[] {
+                new Point(topLeft.X * scaleTo, topLeft.Y * scaleTo),
+                new Point(topRight.X * scaleTo, topRight.Y * scaleTo),
+                new Point(bottomRight.X * scaleTo, bottomRight.Y * scaleTo),
+                new Point(bottomLeft.X * scaleTo, bottomLeft.Y * scaleTo)});
         }
 
         (IImage, IImage) FindForm2(IImage image)
