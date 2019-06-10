@@ -90,9 +90,7 @@
             this.DetectionMethod.FormattingEnabled = true;
             this.DetectionMethod.Items.AddRange(new object[] {
             "Method 1",
-            "Method 2",
-            "Method 3",
-            "Method 4"});
+            "Method 2"});
             this.DetectionMethod.Location = new System.Drawing.Point(17, 16);
             this.DetectionMethod.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.DetectionMethod.Name = "DetectionMethod";
